@@ -24,6 +24,7 @@ struct ProcessResult {
     bool success = false;
     std::string error_msg;
 };
+
 class ThreadPoll
 {
 public:
@@ -44,7 +45,7 @@ private:
 
 private:
     // 下面这两个是新逻辑用到的核心队列与锁/信号量
-    std::queue<std::packaged_task<ProcessResult()>> tasks;
+    std::queue<std::packaged_task<ProcessResult(std::shared_ptr<Yolov5s>)>> tasks;
     std::mutex queue_mutex;
     std::condition_variable condition;
 

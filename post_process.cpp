@@ -91,7 +91,7 @@ static int nms(int validCount, vector<float> &boxes, vector<int> &classID,
             float iou = calculateIOU(xmin0, ymin0, xmax0, ymax0, xmin1, ymin1, xmax1, ymax1);
             if(iou > nms_threshold )
             {
-                indexArray[i] = -1;
+                indexArray[j] = -1;
             }            
         }
     }

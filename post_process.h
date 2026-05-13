@@ -45,7 +45,7 @@ struct detect_result_t
   // 定义结构体，表示检测结果组
 struct detect_result_group_t
 {
-    int box_count;                          // 框的数量
+    int box_count;                           // 框的数量
     detect_result_t result[OBJ_NUM_MAX_SIZE];// 检测结果数组
 };  
 

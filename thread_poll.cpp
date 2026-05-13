@@ -38,7 +38,7 @@ void ThreadPoll::init(const char* model_path, int num_threads)
     // 也可以根据需求只创建几个再共享
     for(int i = 0; i < num_threads; i++)
     {
-        auto yolo = std::make_shared<Yolov5s>(model_path, i % 3);
+        auto yolo = std::make_shared<Yolov5s>(model_path, i % 3);//类似于使用new创建对象，先创建三个yolo对象
         yolo_group.emplace_back(yolo);
     }
 
@@ -57,7 +57,7 @@ void ThreadPoll::worker(int id)
     std::cout << "worker线程启动, id=" << id << "\n";
     while(run_flag)
     {
-        std::packaged_task<ProcessResult()> current_task;
+        std::packaged_task<ProcessResult(std::shared_ptr<Yolov5s>)> current_task;
         {
             // 阻塞等待队列内有任务，或等到退出信号
             std::unique_lock<std::mutex> lock(queue_mutex);
@@ -72,18 +72,16 @@ void ThreadPoll::worker(int id)
                 std::cout << "worker " << id << " 下班！\n";
                 break;
             }
-
             // 从 tasks 队列取出一个打包的任务
             current_task = std::move(tasks.front());
             tasks.pop();
         }
-
         // 离开大锁区后执行真正的推理任务
         if(current_task.valid())
         {
             printf("worker %d get task！\r\n", id); // 获取任务
-            // 如果任务有效，就调用 operator() 执行
-            current_task();
+            // 如果任务有效，就调用 operator() 执行，传入专属 yolo
+            current_task(yolo);
         }
     }
     // 在worker线程退出时添加
@@ -93,25 +91,19 @@ void ThreadPoll::worker(int id)
 // 新的方法：往 tasks 里塞任务，并用 std::future<ProcessResult> 返回结果
 std::future<ProcessResult> ThreadPoll::submit_task_async(int index, cv::Mat img)
 {
-    // 1) 打包任务为 std::packaged_task<ProcessResult()>
-    //    其中捕获 [this, index, img] 就可以在lambda里使用
-    std::packaged_task<ProcessResult()> task([this, index, img]()
+    // 1) 打包任务为 std::packaged_task<ProcessResult(std::shared_ptr<Yolov5s>)>
+    //    由 worker 在执行时传入自己的专属 yolo，实现线程隔离
+    std::packaged_task<ProcessResult(std::shared_ptr<Yolov5s>)> task([index, img](std::shared_ptr<Yolov5s> yolo) mutable
     {
         ProcessResult result;
         try
         {
-            // 从 yolo_group 里选一个做推理，这里简单选 index % yolo_group.size()
-            // 你也可以做负载均衡
-            auto yolo = yolo_group[index % yolo_group.size()];
+            printf("worker get task %d！\r\n", index);
 
-            printf("worker get task %d！\r\n", index); // 获取任务
-
-            // 推理
             detect_result_group_t detections;
             yolo->inference_image(img, detections);
-            yolo->draw_result(const_cast<cv::Mat&>(img), detections);
+            yolo->draw_result(img, detections);
 
-            // 填充结果
             result.processed_img = img;
             result.detection_results = detections;
             result.success = true;

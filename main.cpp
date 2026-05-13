@@ -98,12 +98,22 @@ void aggregatorThreadFunc(ThreadPoll &npu_pool)
             if(status == std::future_status::ready)
             {
                 // 获取推理结果
-                ProcessResult result = it->second.get();
+                ProcessResult result;
+                try {
+                    result = it->second.get();
+                } catch (const std::exception& e) {
+                    result.success = false;
+                    result.error_msg = e.what();
+                    result.processed_img = cv::Mat();
+                    std::cerr << "task " << nextWriteIndex << " exception: " << e.what() << std::endl;
+                }
 
                 // 将推理后图像放到 g_writeQueue
                 FrameData outputFD;
                 outputFD.index = nextWriteIndex;
-                outputFD.frame = result.processed_img.clone();
+                if (!result.processed_img.empty()) {
+                    outputFD.frame = result.processed_img.clone();
+                }
                 g_writeQueue.enqueue(outputFD);
 
                 // 移除映射并递增下一个待写index
