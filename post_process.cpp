@@ -290,7 +290,7 @@ int post_process(int8_t *output0, int8_t *output1, int8_t *output2,
     else
     {
         // 后续不再重复加载
-        // 如果你仍想打印，可以查看 labels.size() 之类
+        // 如果仍想打印，可以查看 labels.size() 之类
         // cout << "已加载过标签, labels.size()=" << labels.size() << endl;
     }
     // for (string &s : labels)
@@ -298,7 +298,7 @@ int post_process(int8_t *output0, int8_t *output1, int8_t *output2,
     //     cout << "lable name " << s << endl;
     // }
     
-    // 示例：量化和反量化测试
+    // 量化和反量化测试
     int8_t int8_num = qnt_f32_to_int8(1.5, 1, 8.0f/255.0f);
     // cout << static_cast<int>(int8_num) << endl;
     float f = deqnt_int8_to_f32(48, 1, 0.03137f);

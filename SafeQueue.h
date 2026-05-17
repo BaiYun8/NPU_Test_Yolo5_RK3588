@@ -18,7 +18,10 @@ public:
     void enqueue(const T &t)
     {
         unique_lock<mutex> lock(m);
-        cond_not_full.wait(lock, [this]{return q.size() < maxSize;});
+        cond_not_full.wait(lock, [this]{return stop_flag || q.size() < maxSize;});
+        if (stop_flag) {
+            return;
+        }
         
         q.push(t);
         cond_not_empty.notify_one();
@@ -28,7 +31,7 @@ public:
     bool dequeue(T &t)
     {
         unique_lock<mutex> lock(m);
-        cond_not_empty.wait(lock,[this] { return !q.empty(); });
+        cond_not_empty.wait(lock,[this] { return stop_flag || !q.empty(); });
         if(stop_flag && q.empty()) {
             // 若收到停止信号且队列也空了，就返回 false
             return false;

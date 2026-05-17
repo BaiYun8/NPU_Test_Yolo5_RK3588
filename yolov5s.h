@@ -25,18 +25,19 @@ using namespace cv;
 class Yolov5s
 {
 private:
-    rknn_context context;  // 关键点：此处必须与 rknn_api.h 中的定义一致
-    unsigned int model_size;
+    rknn_context context = 0;  // 关键点：此处必须与 rknn_api.h 中的定义一致
+    unsigned int model_size = 0;
 
     rknn_tensor_attr input_tensor;
     rknn_tensor_attr output_tensor;
-    rknn_input_output_num num_tensors;
+    rknn_input_output_num num_tensors{};
 
     vector<rknn_tensor_attr> input_attrs;
     vector<rknn_tensor_attr> output_attrs;
 
-    unsigned char *model_data;
+    unsigned char *model_data = nullptr;
     unsigned char * load_model(const char* model_path, unsigned int &model_size);
+    bool initialized_ = false;
 
 public:
 
@@ -45,18 +46,19 @@ public:
 
     
     // 模型的高、宽和通道数
-    int model_height;
-    int model_width;
-    int model_channel;
+    int model_height = 0;
+    int model_width = 0;
+    int model_channel = 0;
 
     // 输入图像的高、宽和通道数
-    int img_height;
-    int img_width;
-    int img_channel;
+    int img_height = 0;
+    int img_width = 0;
+    int img_channel = 0;
 
     //模型推理函数
     int inference_image(const Mat &origin_img, detect_result_group_t &result_group);
     int draw_result(const cv::Mat &orig_img, detect_result_group_t &group);
+    bool is_initialized() const { return initialized_; }
 
 };
 
